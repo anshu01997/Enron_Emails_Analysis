@@ -14,8 +14,8 @@ from matplotlib import pyplot as plt
 df = pd.read_csv("enron_test.csv") 
 df["new_date"] = df["new_date"].astype("datetime64")
 
-# email = input("Enter Email for Analysis:")
-email = 'phillip.allen@enron.com'
+email = input("Enter Email for Analysis:")
+# email = 'phillip.allen@enron.com'
 from_filter = df['From'].apply(lambda x: email in str(x))
 to_filter = df['To'].apply(lambda x: email in str(x))
 
@@ -29,16 +29,15 @@ if to_filtered_data.size > 0:
 else:
   print("NO emails received!")
 
+
 if from_filtered_data.size > 0:
   from_filtered_data.groupby([df["new_date"].dt.year, df["new_date"].dt.isocalendar().week]).count().plot(kind="bar", figsize=(15,5), color='#2173e7', title = "Weekly emails sent:", xlabel = '(Year, Week)', ylabel = 'Number of emails')
 else:
   print("NO emails sent!")
 
-plt.show()
-
 # %pip install rake-nltk
 # %%python -c "import nltk; nltk.download('stopwords')"
-
+import numpy as np
 from rake_nltk import Metric, Rake
 
 to_filtered_data = df.loc[to_filter][['content']]
@@ -48,25 +47,62 @@ print("Top 50 Keywords in received email with score: ")
 r = Rake(min_length=1, max_length=3, stopwords=["\/","@",":","the", "an", "a", "is","/?", "=", "<", ">,", "\\", "\"", "com", "\n", "----------------------", "---------------------------"])
 r.extract_keywords_from_sentences(to_filtered_data["content"])
 received_keywords = r.get_ranked_phrases_with_scores()[0:50]
-print(received_keywords)
+print("\n".join([str(line) for line in received_keywords]))
 
 print("\nTop 50 Keywords in sent email with score: ")
 r.extract_keywords_from_sentences(from_filtered_data["content"])
 sent_keywords = r.get_ranked_phrases_with_scores()[0:50]
-print(sent_keywords)
+print("\n".join([str(line) for line in sent_keywords]))
 
 # create data
 x = np.random.rand(50)
 y = np.random.rand(50)
 zi = list(reversed(range(51)))[0:50]
 #scatter plot size based on keyword score
-size = [np.log2(kw[0])*2000 for kw in received_keywords]
+size = [kw[0]*1000 for kw in received_keywords]
 
 colors = np.random.rand(50)
-fig, ax = plt.subplots(figsize=(15,15))
+fig, ax = plt.subplots(figsize=(15,10))
 ax.scatter(x, y, s=size,c=colors, alpha=0.25)
+ax.set_title("Top keywords in received email")
 
 for i, txt in enumerate(received_keywords):
     ax.annotate(txt[1], (x[i], y[i]))
+
+
+size = [kw[0]*1000 for kw in sent_keywords]
+fig2, ax2 = plt.subplots(figsize=(15,10))
+ax2.scatter(x, y, s=size,c=colors, alpha=0.25)
+ax2.set_title("Top keywords in sent email")
+
+for i, txt in enumerate(sent_keywords):
+    ax2.annotate(txt[1], (x[i], y[i]))
+
+plt.show()
+
+import functools 
+
+weekday_received_data = df.loc[to_filter]['new_date'].apply(lambda x: x.weekday())
+weekday_sent_data = df.loc[from_filter]['new_date'].apply(lambda x: x.weekday())
+
+# weekday_sent_data.plot.hist(bins=[0,1,2,3,4,5,6,7], alpha=0.5, x = [6,5,4,5,6,7,8])
+fig3, ax3 = plt.subplots()
+ax3.hist(weekday_sent_data, alpha=0.5, bins=[0,1,2,3,4,5,6,7])
+weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+# Set number of ticks for x-axis
+ax3.set_xticks([0,1,2,3,4,5,6,7])
+# Set ticks labels for x-axis
+ax3.set_xticklabels(weekdays, rotation='vertical', fontsize=18)
+# weekday_received_data.plot.hist(bins=[0,1,2,3,4,5,6,7], alpha=0.5)
+ax3.set_title("Weekday distribution of emails sent:")
+
+fig4, ax4 = plt.subplots()
+ax4.hist(weekday_received_data, alpha=0.5, bins=[0,1,2,3,4,5,6,7])
+weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+# Set number of ticks for x-axis
+ax4.set_xticks([0,1,2,3,4,5,6,7])
+# Set ticks labels for x-axis
+ax4.set_xticklabels(weekdays, rotation='vertical', fontsize=18)
+ax4.set_title("Weekday distribution of emails received:")
 
 plt.show()
