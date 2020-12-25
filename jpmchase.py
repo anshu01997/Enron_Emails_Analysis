@@ -15,7 +15,7 @@ df = pd.read_csv("enron_test.csv")
 df["new_date"] = df["new_date"].astype("datetime64")
 
 # email = input("Enter Email for Analysis:")
-email = 'richard.causey@enron.com'
+email = 'phillip.allen@enron.com'
 from_filter = df['From'].apply(lambda x: email in str(x))
 to_filter = df['To'].apply(lambda x: email in str(x))
 
@@ -33,5 +33,40 @@ if from_filtered_data.size > 0:
   from_filtered_data.groupby([df["new_date"].dt.year, df["new_date"].dt.isocalendar().week]).count().plot(kind="bar", figsize=(15,5), color='#2173e7', title = "Weekly emails sent:", xlabel = '(Year, Week)', ylabel = 'Number of emails')
 else:
   print("NO emails sent!")
+
+plt.show()
+
+# %pip install rake-nltk
+# %%python -c "import nltk; nltk.download('stopwords')"
+
+from rake_nltk import Metric, Rake
+
+to_filtered_data = df.loc[to_filter][['content']]
+from_filtered_data = df.loc[from_filter][['content']]
+
+print("Top 50 Keywords in received email with score: ")
+r = Rake(min_length=1, max_length=3, stopwords=["\/","@",":","the", "an", "a", "is","/?", "=", "<", ">,", "\\", "\"", "com", "\n", "----------------------", "---------------------------"])
+r.extract_keywords_from_sentences(to_filtered_data["content"])
+received_keywords = r.get_ranked_phrases_with_scores()[0:50]
+print(received_keywords)
+
+print("\nTop 50 Keywords in sent email with score: ")
+r.extract_keywords_from_sentences(from_filtered_data["content"])
+sent_keywords = r.get_ranked_phrases_with_scores()[0:50]
+print(sent_keywords)
+
+# create data
+x = np.random.rand(50)
+y = np.random.rand(50)
+zi = list(reversed(range(51)))[0:50]
+#scatter plot size based on keyword score
+size = [np.log2(kw[0])*2000 for kw in received_keywords]
+
+colors = np.random.rand(50)
+fig, ax = plt.subplots(figsize=(15,15))
+ax.scatter(x, y, s=size,c=colors, alpha=0.25)
+
+for i, txt in enumerate(received_keywords):
+    ax.annotate(txt[1], (x[i], y[i]))
 
 plt.show()
